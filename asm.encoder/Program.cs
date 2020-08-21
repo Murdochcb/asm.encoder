@@ -28,63 +28,6 @@ namespace asm.encoder
         const string SourceFlag = "-source";
         const string TargetFlag = "-target";
         const string AllowedFlag = "-allowed";
-        const string TestFlag = "-test";
-
-        static void UnitTest(string[] args)
-        {
-            byte[] allowedBytes = args[5].Split(new string[] { "\\x" }, StringSplitOptions.RemoveEmptyEntries).Select(b => byte.Parse(b, System.Globalization.NumberStyles.HexNumber)).ToArray();
-            bool useAddEncoder = args.Any(a => string.Equals(a, AddFlag, StringComparison.OrdinalIgnoreCase));
-            bool useSubEncoder = args.Any(a => string.Equals(a, SubFlag, StringComparison.OrdinalIgnoreCase));
-            bool useXorEncoder = args.Any(a => string.Equals(a, XorFlag, StringComparison.OrdinalIgnoreCase));
-
-            BaseEncoder addSubEncoder = null;
-            BaseEncoder xorEncoder = null;
-
-            if (useAddEncoder || useSubEncoder)
-            {
-                addSubEncoder = new AddSubEncoder(allowedBytes);
-            }
-            if (useXorEncoder)
-            {
-                xorEncoder = new XorEncoder(allowedBytes);
-            }
-
-            Random random = new Random();
-            long counter = 0;
-
-            while (true)
-            {
-                OpCode source = new OpCode((uint)random.Next());
-                OpCode target = new OpCode((uint)random.Next());
-
-                AsmEncoding addEncoding = null;
-                AsmEncoding subEncoding = null;
-                AsmEncoding xorEncoding = null;
-
-                if (useAddEncoder)
-                {
-                    addEncoding = addSubEncoder.EncodeOperation(source, target, Operation.ADD);
-                    System.Diagnostics.Debug.Assert(addEncoding.Intermediate.Code == addEncoding.Target.Code);
-                }
-                if (useSubEncoder)
-                {
-                    subEncoding = addSubEncoder.EncodeOperation(source, target, Operation.SUB);
-                    System.Diagnostics.Debug.Assert(subEncoding.Intermediate.Code == subEncoding.Target.Code);
-                }
-                if (useXorEncoder)
-                {
-                    xorEncoding = xorEncoder.EncodeOperation(source, target, Operation.XOR);
-                    System.Diagnostics.Debug.Assert(xorEncoding.Intermediate.Code == xorEncoding.Target.Code);
-                }
-
-                counter++;
-
-                if (counter % 1000 == 0)
-                {
-                    Console.WriteLine($"Completed {counter} iterations.");
-                }
-            }
-        }
 
         static void ValidateArgs(string[] args)
         {
@@ -200,13 +143,6 @@ namespace asm.encoder
                 Console.WriteLine(ex.Message);
                 return;
             }
-
-#if DEBUG
-            if (args[args.Length - 1] == TestFlag)
-            {
-                UnitTest(args);
-            }
-#endif
 
             SetupOption1();
             SetupOption2();
