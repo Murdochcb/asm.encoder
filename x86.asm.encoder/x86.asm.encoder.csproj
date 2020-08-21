@@ -44,9 +44,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsmEncoding.cs" />
-    <Compile Include="Encoder\AddSubEncoder.cs" />
-    <Compile Include="Encoder\IEncoder.cs" />
-    <Compile Include="Encoder\XorEncoder.cs" />
+    <Compile Include="Encoders\AddSubEncoder.cs" />
+    <Compile Include="Encoders\BaseEncoder.cs" />
+    <Compile Include="Encoders\XorEncoder.cs" />
     <Compile Include="OpCode.cs" />
     <Compile Include="Operation.cs" />
     <Compile Include="Program.cs" />
