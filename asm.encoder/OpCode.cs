@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace x86.asm.encoder
+namespace asm.encoder
 {
     internal sealed class OpCode
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace x86.asm.encoder.Encoders
+namespace asm.encoder.Encoders
 {
     internal abstract class BaseEncoder
     {

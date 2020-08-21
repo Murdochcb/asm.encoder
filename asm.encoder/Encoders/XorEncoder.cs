@@ -1,19 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace x86.asm.encoder.Encoders
+namespace asm.encoder.Encoders
 {
-    internal sealed class AddSubEncoder : BaseEncoder
+    internal sealed class XorEncoder : BaseEncoder
     {
         private readonly Dictionary<Byte, IEnumerable<Byte>> map;
         private readonly IEnumerable<Byte> allowedBytes;
+        private readonly Operation xorOperation;
 
-        public AddSubEncoder(IEnumerable<Byte> allowedBytes)
+        public XorEncoder(IEnumerable<Byte> allowedBytes)
         {
+            this.xorOperation = Operation.XOR;
+
             this.allowedBytes = allowedBytes ?? throw new ArgumentNullException(nameof(allowedBytes));
 
             if (!this.allowedBytes.Any())
@@ -28,18 +30,7 @@ namespace x86.asm.encoder.Encoders
         {
             AsmEncoding encoding = new AsmEncoding(source, target);
 
-            OpCode delta;
-            switch (operation)
-            {
-                case Operation.ADD:
-                    delta = encoding.Target - encoding.Intermediate;
-                    break;
-                case Operation.SUB:
-                    delta = encoding.Intermediate - encoding.Target;
-                    break;
-                default:
-                    throw new ArgumentException($"Unsupported operation: {operation}");
-            }
+            OpCode delta = encoding.Target ^ encoding.Intermediate;
 
             if (!delta.Ops.All(b => this.map.ContainsKey(b)))
             {
@@ -49,12 +40,15 @@ namespace x86.asm.encoder.Encoders
             int transitionCount = delta.Ops.Select(b => this.map[b].Count()).Max();
             IEnumerable<Transition> transitions = this.BuildTransitions(operation, delta, transitionCount);
 
+            if (!transitions.Any())
+            {
+                throw new InvalidOperationException($"Cannot produce encoding with current restrictions.");
+            }
+
             foreach (var transition in transitions)
             {
                 encoding.Transitions.Add(transition);
             }
-
-            Debug.Assert(encoding.Target.Code == encoding.Intermediate.Code);
 
             return encoding;
         }
@@ -67,8 +61,8 @@ namespace x86.asm.encoder.Encoders
             {
                 foreach (var pairTwo in filteredMap)
                 {
-                    byte sum = (byte)(pairOne.Key + pairTwo.Key);
-                    if (sum == delta && (pairOne.Value.Count() + pairTwo.Value.Count()) == transitionCount)
+                    byte xor = (byte)(pairOne.Key ^ pairTwo.Key);
+                    if (xor == delta && (pairOne.Value.Count() + pairTwo.Value.Count()) == transitionCount)
                     {
                         return pairOne.Value.Concat(pairTwo.Value).ToList();
                     }
@@ -82,11 +76,6 @@ namespace x86.asm.encoder.Encoders
         {
             if (transitionCount > 10)
             {
-                throw new InvalidOperationException($"Cannot produce encoding within transition count limit.");
-            }
-
-            if (delta.Code == 0x0)
-            {
                 return Enumerable.Empty<Transition>();
             }
 
@@ -94,20 +83,6 @@ namespace x86.asm.encoder.Encoders
 
             for (int i = 0; i < delta.Ops.Length; i++)
             {
-                byte carry = 0;
-                for (int j = 0; j < i; j++)
-                {
-                    int transitionSum = transitions.ElementAt(j).Sum(b => b) + carry;
-                    carry = (byte)(transitionSum / (byte.MaxValue + 1));
-                }
-                
-                delta.Ops[i] = (byte)(delta.Ops[i] - carry);
-                int modifiedTransitionCount = delta.Ops.Select(b => this.map[b].Count()).Max();
-                if (modifiedTransitionCount != transitionCount && modifiedTransitionCount > transitionCount)
-                {
-                    return this.BuildTransitions(operation, delta, modifiedTransitionCount);
-                }
-
                 if (this.map[delta.Ops[i]].Count() == transitionCount)
                 {
                     transitions.Add(this.map[delta.Ops[i]].ToList());
@@ -121,7 +96,7 @@ namespace x86.asm.encoder.Encoders
                     }
                     else
                     {
-                        return this.BuildTransitions(operation, delta, transitionCount + 1);
+                        return this.BuildTransitions(this.xorOperation, delta, transitionCount + 1);
                     }
                 }
             }
@@ -142,7 +117,7 @@ namespace x86.asm.encoder.Encoders
                         transitions.ElementAt(3).ElementAt(i)
                 }, 0));
 
-                result.Add(new Transition(operation, step));
+                result.Add(new Transition(this.xorOperation, step));
             }
 
             return result;
@@ -165,10 +140,10 @@ namespace x86.asm.encoder.Encoders
                 {
                     foreach (var pair in result)
                     {
-                        byte sum = (byte)(allowed + pair.Key);
-                        if (!result.ContainsKey(sum) && !tempMap.ContainsKey(sum))
+                        byte xor = (byte)(allowed ^ pair.Key);
+                        if (!result.ContainsKey(xor) && !tempMap.ContainsKey(xor))
                         {
-                            tempMap[sum] = new List<byte>() { allowed }.Concat(pair.Value).ToList();
+                            tempMap[xor] = new List<byte>() { allowed }.Concat(pair.Value).ToList();
                         }
                     }
                 }

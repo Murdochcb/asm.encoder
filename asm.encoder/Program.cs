@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using x86.asm.encoder.Encoders;
+using asm.encoder.Encoders;
 
-namespace x86.asm.encoder
+namespace asm.encoder
 {
     /* CLI Example:
      -source \x00\x00\x00\x00 
@@ -88,7 +88,7 @@ namespace x86.asm.encoder
 
         static void ValidateArgs(string[] args)
         {
-            string usageMessage = $"Usage: {nameof(x86.asm.encoder)} -source <value> -target <value> -allowed <value> [-add | -sub | -xor]";
+            string usageMessage = $"Usage: {nameof(asm.encoder)} -source <value> -target <value> -allowed <value> [-add | -sub | -xor]";
             string byteFormatMessage = $"<value> must be binary string format: \\x00\\x01\\x02";
             string sourceLengthMessage = $"-source <value> must be exactly 4 bytes";
             string targetLengthMessage = $"-target <value> must be a multiple of 4 bytes";
