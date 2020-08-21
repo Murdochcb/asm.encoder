@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using x86.asm.encoder.Encoder;
+using x86.asm.encoder.Encoders;
 
 namespace x86.asm.encoder
 {
@@ -37,8 +37,8 @@ namespace x86.asm.encoder
             bool useSubEncoder = args.Any(a => string.Equals(a, SubFlag, StringComparison.OrdinalIgnoreCase));
             bool useXorEncoder = args.Any(a => string.Equals(a, XorFlag, StringComparison.OrdinalIgnoreCase));
 
-            IEncoder addSubEncoder = null;
-            IEncoder xorEncoder = null;
+            BaseEncoder addSubEncoder = null;
+            BaseEncoder xorEncoder = null;
 
             if (useAddEncoder || useSubEncoder)
             {
@@ -218,8 +218,8 @@ namespace x86.asm.encoder
             bool useSubEncoder = args.Any(a => string.Equals(a, SubFlag, StringComparison.OrdinalIgnoreCase));
             bool useXorEncoder = args.Any(a => string.Equals(a, XorFlag, StringComparison.OrdinalIgnoreCase));
 
-            IEncoder addSubEncoder = null;
-            IEncoder xorEncoder = null;
+            BaseEncoder addSubEncoder = null;
+            BaseEncoder xorEncoder = null;
 
             if (useAddEncoder || useSubEncoder)
             {
