@@ -54,8 +54,6 @@ namespace asm.encoder.Encoders
                 encoding.Transitions.Add(transition);
             }
 
-            Debug.Assert(encoding.Target.Code == encoding.Intermediate.Code);
-
             return encoding;
         }
 
@@ -92,6 +90,7 @@ namespace asm.encoder.Encoders
 
             ICollection<List<byte>> transitions = new List<List<byte>>();
 
+            OpCode deltaCarryAdjusted = new OpCode(delta.Code);
             for (int i = 0; i < delta.Ops.Length; i++)
             {
                 byte carry = 0;
@@ -100,21 +99,21 @@ namespace asm.encoder.Encoders
                     int transitionSum = transitions.ElementAt(j).Sum(b => b) + carry;
                     carry = (byte)(transitionSum / (byte.MaxValue + 1));
                 }
-                
-                delta.Ops[i] = (byte)(delta.Ops[i] - carry);
-                int modifiedTransitionCount = delta.Ops.Select(b => this.map[b].Count()).Max();
+
+                deltaCarryAdjusted.Ops[i] = (byte)(deltaCarryAdjusted.Ops[i] - carry);
+                int modifiedTransitionCount = deltaCarryAdjusted.Ops.Select(b => this.map[b].Count()).Max();
                 if (modifiedTransitionCount != transitionCount && modifiedTransitionCount > transitionCount)
                 {
                     return this.BuildTransitions(operation, delta, modifiedTransitionCount);
                 }
 
-                if (this.map[delta.Ops[i]].Count() == transitionCount)
+                if (this.map[deltaCarryAdjusted.Ops[i]].Count() == transitionCount)
                 {
-                    transitions.Add(this.map[delta.Ops[i]].ToList());
+                    transitions.Add(this.map[deltaCarryAdjusted.Ops[i]].ToList());
                 }
                 else
                 {
-                    IEnumerable<byte> deltaOperation = this.BuildPartialTransition(transitionCount, delta.Ops[i]);
+                    IEnumerable<byte> deltaOperation = this.BuildPartialTransition(transitionCount, deltaCarryAdjusted.Ops[i]);
                     if (deltaOperation.Any())
                     {
                         transitions.Add(deltaOperation.ToList());
