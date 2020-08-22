@@ -121,19 +121,36 @@ namespace asm.encoder
         static void SetupOption2()
         {
             Console.WriteLine($"{string.Empty.PadRight(20, '=')}{nameof(SetupOption2)}{string.Empty.PadRight(20, '=')}");
-            Console.WriteLine($"+0x03: POP <REG>");
-            Console.WriteLine($"+0x02: PUSH <REG>");
-            Console.WriteLine($"+0x01: {"C3",-20}; RETN");
+            Console.WriteLine($"-0x05: {"EB03",-20}; JMP 'CALL POP <REG>'");
+            Console.WriteLine($"-0x03: POP <REG>");
+            Console.WriteLine($"-0x02: PUSH <REG>");
+            Console.WriteLine($"-0x01: {"C3",-20}; RETN");
             Console.WriteLine($"---->: {"E8F8FFFFFF",-20}; CALL 'POP <REG>'");
-            Console.WriteLine($"+0x01: MOV ESP, <REG>");
-            Console.WriteLine($"-0x03: ADD ESP, <STACK_SPACE>");
+            Console.WriteLine($"OPTNL: MOV <REG2>, ESP; SAVE ESP FOR LATER RESTORE");
+            Console.WriteLine($"+0x05: MOV ESP, <REG>");
+            Console.WriteLine($"-0x07: ADD ESP, <STACK_SPACE>");
             Console.WriteLine($"{string.Empty.PadRight(20, '=')}{nameof(SetupOption2)}{string.Empty.PadRight(20, '=')}");
+            Console.WriteLine(Environment.NewLine);
+        }
+
+        static void SetupOption3()
+        {
+            Console.WriteLine($"{string.Empty.PadRight(20, '=')}{nameof(SetupOption3)}{string.Empty.PadRight(20, '=')}");
+            Console.WriteLine($"-0x04: {"EB02",-20}; JMP --> 'CALL'");
+            Console.WriteLine($"-0x02: {"EB05",-20}; JMP --> 'POP <REG>'");
+            Console.WriteLine($"---->: {"E8F8FFFFFF",-20}; CALL");
+            Console.WriteLine($"OPTNL: MOV <REG2>, ESP; SAVE ESP FOR LATER RESTORE");
+            Console.WriteLine($"+0x05: POP <REG>");
+            Console.WriteLine($"+0x05: MOV ESP, <REG>");
+            Console.WriteLine($"-0x07: ADD ESP, <STACK_SPACE>");
+            Console.WriteLine($"{string.Empty.PadRight(20, '=')}{nameof(SetupOption3)}{string.Empty.PadRight(20, '=')}");
             Console.WriteLine(Environment.NewLine);
         }
 
         static void Main(string[] args)
         {
             Console.WriteLine($"Endian Format: {(BitConverter.IsLittleEndian ? "LITTLE ENDIAN" : "BIG ENDIAN")}");
+            Console.WriteLine($"When using this tool to find encoded ADD/SUB amount to increment register, input 'target' as LITTLE ENDIAN format.");
             try
             {
                 ValidateArgs(args);
@@ -146,6 +163,7 @@ namespace asm.encoder
 
             SetupOption1();
             SetupOption2();
+            SetupOption3();
 
             byte[] sourceBytes = args[1].Split(new string[] { "\\x" }, StringSplitOptions.RemoveEmptyEntries).Select(b => byte.Parse(b, System.Globalization.NumberStyles.HexNumber)).ToArray();
             byte[] targetBytes = args[3].Split(new string[] { "\\x" }, StringSplitOptions.RemoveEmptyEntries).Select(b => byte.Parse(b, System.Globalization.NumberStyles.HexNumber)).ToArray();
