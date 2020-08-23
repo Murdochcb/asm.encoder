@@ -9,6 +9,7 @@ namespace asm.encoder
 {
     internal sealed class OpCode
     {
+        public static readonly OpCode Zero = new OpCode(0x0);
         public byte[] Ops;
         public uint Code => BitConverter.ToUInt32(this.Ops, 0);
 

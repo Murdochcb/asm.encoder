@@ -9,20 +9,7 @@ namespace asm.encoder.Encoders
 {
     internal sealed class AddSubEncoder : BaseEncoder
     {
-        private readonly Dictionary<Byte, IEnumerable<Byte>> map;
-        private readonly IEnumerable<Byte> allowedBytes;
-
-        public AddSubEncoder(IEnumerable<Byte> allowedBytes)
-        {
-            this.allowedBytes = allowedBytes ?? throw new ArgumentNullException(nameof(allowedBytes));
-
-            if (!this.allowedBytes.Any())
-            {
-                throw new ArgumentException($"{nameof(this.allowedBytes)} cannot be empty.");
-            }
-
-            this.map = this.BuildMap();
-        }
+        public AddSubEncoder(IEnumerable<Byte> allowedBytes) : base(allowedBytes) { }
 
         public override AsmEncoding EncodeOperation(OpCode source, OpCode target, Operation operation)
         {
@@ -41,13 +28,12 @@ namespace asm.encoder.Encoders
                     throw new ArgumentException($"Unsupported operation: {operation}");
             }
 
-            if (!delta.Ops.All(b => this.map.ContainsKey(b)))
+            if (!this.TransitionExists(delta))
             {
                 return null;
             }
 
-            int transitionCount = delta.Ops.Select(b => this.map[b].Count()).Max();
-            IEnumerable<Transition> transitions = this.BuildTransitions(operation, delta, transitionCount);
+            IEnumerable<Transition> transitions = this.BuildTransitions(operation, delta);
 
             foreach (var transition in transitions)
             {
@@ -57,123 +43,98 @@ namespace asm.encoder.Encoders
             return encoding;
         }
 
-        protected override IEnumerable<Byte> BuildPartialTransition(int transitionCount, byte delta)
+        protected override IEnumerable<Transition> BuildTransitions(Operation operation, OpCode delta)
         {
-            Dictionary<byte, IEnumerable<byte>> filteredMap = this.map.Where(pair => pair.Value.Count() < transitionCount).ToDictionary(pair => pair.Key, pair => pair.Value);
-
-            foreach (var pairOne in filteredMap)
-            {
-                foreach (var pairTwo in filteredMap)
-                {
-                    byte sum = (byte)(pairOne.Key + pairTwo.Key);
-                    if (sum == delta && (pairOne.Value.Count() + pairTwo.Value.Count()) == transitionCount)
-                    {
-                        return pairOne.Value.Concat(pairTwo.Value).ToList();
-                    }
-                }
-            }
-
-            return Enumerable.Empty<byte>();
-        }
-
-        protected override IEnumerable<Transition> BuildTransitions(Operation operation, OpCode delta, int transitionCount)
-        {
-            if (transitionCount > 10)
-            {
-                throw new InvalidOperationException($"Cannot produce encoding within transition count limit.");
-            }
-
-            if (delta.Code == 0x0)
+            if (OpCode.Zero.Equals(delta.Code))
             {
                 return Enumerable.Empty<Transition>();
             }
 
             ICollection<List<byte>> transitions = new List<List<byte>>();
 
-            OpCode deltaCarryAdjusted = new OpCode(delta.Code);
-            for (int i = 0; i < delta.Ops.Length; i++)
+            for (int transitionCount = 1; transitionCount <= this.map.Keys.Max(); transitionCount++)
             {
-                byte carry = 0;
-                for (int j = 0; j < i; j++)
+                if (this.TransitionCountExists(transitionCount, delta))
                 {
-                    int transitionSum = transitions.ElementAt(j).Sum(b => b) + carry;
-                    carry = (byte)(transitionSum / (byte.MaxValue + 1));
-                }
+                    OpCode deltaCarryAdjusted = new OpCode(delta.Code);
 
-                deltaCarryAdjusted.Ops[i] = (byte)(deltaCarryAdjusted.Ops[i] - carry);
-                int modifiedTransitionCount = deltaCarryAdjusted.Ops.Select(b => this.map[b].Count()).Max();
-                if (modifiedTransitionCount != transitionCount && modifiedTransitionCount > transitionCount)
-                {
-                    return this.BuildTransitions(operation, delta, modifiedTransitionCount);
-                }
-
-                if (this.map[deltaCarryAdjusted.Ops[i]].Count() == transitionCount)
-                {
-                    transitions.Add(this.map[deltaCarryAdjusted.Ops[i]].ToList());
-                }
-                else
-                {
-                    IEnumerable<byte> deltaOperation = this.BuildPartialTransition(transitionCount, deltaCarryAdjusted.Ops[i]);
-                    if (deltaOperation.Any())
+                    for (int i = 0; i < delta.Ops.Length; i++)
                     {
-                        transitions.Add(deltaOperation.ToList());
+                        byte carry = 0;
+                        for (int j = 0; j < i; j++)
+                        {
+                            int transitionSum = transitions.ElementAt(j).Sum(b => b) + carry;
+                            carry = (byte)(transitionSum / (byte.MaxValue + 1));
+                        }
+
+                        deltaCarryAdjusted.Ops[i] = (byte)(deltaCarryAdjusted.Ops[i] - carry);
+                        if (!this.TransitionCountByteExists(transitionCount, i, deltaCarryAdjusted))
+                        {
+                            break;
+                        }
+
+                        transitions.Add(this.map[transitionCount][deltaCarryAdjusted.Ops[i]].ToList());
+                    }
+
+                    if (this.TransitionCountExists(transitionCount, deltaCarryAdjusted))
+                    {
+                        break;
                     }
                     else
                     {
-                        return this.BuildTransitions(operation, delta, transitionCount + 1);
+                        transitions.Clear();
+                        continue;
                     }
                 }
             }
 
-            if (!transitions.Any())
-            {
-                throw new InvalidOperationException($"Cannot produce encoding with current restrictions.");
-            }
-
-            ICollection<Transition> result = new List<Transition>();
-            for (int i = 0; i < transitions.Select(t => t.Count()).Max(); i++)
-            {
-                OpCode step = new OpCode(BitConverter.ToUInt32(new byte[]
-                {
-                        transitions.ElementAt(0).ElementAt(i),
-                        transitions.ElementAt(1).ElementAt(i),
-                        transitions.ElementAt(2).ElementAt(i),
-                        transitions.ElementAt(3).ElementAt(i)
-                }, 0));
-
-                result.Add(new Transition(operation, step));
-            }
-
-            return result;
+            return this.ConvertMapTransitions(operation, transitions);
         }
 
-        protected override Dictionary<Byte, IEnumerable<Byte>> BuildMap()
+        protected override Dictionary<int, Dictionary<Byte, IEnumerable<Byte>>> BuildTransitionMap()
         {
-            var result = new Dictionary<Byte, IEnumerable<Byte>>();
+            var result = new Dictionary<int, Dictionary<Byte, IEnumerable<Byte>>>();
 
+            int transitionCount = 1;
+            result[transitionCount] = new Dictionary<Byte, IEnumerable<Byte>>();
             foreach (byte allowed in this.allowedBytes)
             {
-                result[allowed] = new List<byte>() { allowed };
+                result[transitionCount][allowed] = new List<byte>() { allowed };
             }
 
             Dictionary<byte, IEnumerable<byte>> tempMap = new Dictionary<byte, IEnumerable<byte>>();
-            do
+            for (transitionCount = 2; transitionCount <= transitionCountLimit; transitionCount++)
             {
                 tempMap.Clear();
-                foreach (byte allowed in this.allowedBytes)
+
+                void BuildTransitionMap()
                 {
-                    foreach (var pair in result)
+                    foreach (byte allowed in this.allowedBytes)
                     {
-                        byte sum = (byte)(allowed + pair.Key);
-                        if (!result.ContainsKey(sum) && !tempMap.ContainsKey(sum))
+                        foreach (var pair in result[transitionCount - 1])
                         {
-                            tempMap[sum] = new List<byte>() { allowed }.Concat(pair.Value).ToList();
+                            if (tempMap.Count == byte.MaxValue + 1)
+                            {
+                                return;
+                            }
+
+                            byte sum = (byte)(allowed + pair.Key);
+
+                            if (!tempMap.ContainsKey(sum))
+                            {
+                                tempMap[sum] = new List<Byte>() { allowed }.Concat(pair.Value).ToList();
+                            }
                         }
                     }
                 }
 
-                result = result.Concat(tempMap).ToDictionary(pair => pair.Key, pair => pair.Value);
-            } while (tempMap.Any());
+                BuildTransitionMap();
+
+                if (tempMap.Any())
+                {
+                    result[transitionCount] = tempMap.ToDictionary(pair => pair.Key, pair => pair.Value);
+                }
+            }
 
             return result;
         }

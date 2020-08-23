@@ -79,11 +79,54 @@ namespace asm.test
 
             BaseEncoder addSubEncoder = new AddSubEncoder(allowedBytes);
 
-            OpCode source = new OpCode((uint)0x7E16DFC6);
-            OpCode target = new OpCode((uint)0x7D8BE34F);
+            OpCode source = new OpCode(0x7E16DFC6);
+            OpCode target = new OpCode(0x7D8BE34F);
 
             AsmEncoding subEncoding = addSubEncoder.EncodeOperation(source, target, Operation.SUB);
             Assert.AreEqual(subEncoding.Intermediate.Code, subEncoding.Target.Code, $"{Operation.SUB} :: {source.ToString(false)} --> {target.ToString(false)} == {subEncoding.Transitions.Select(op => op.Delta.ToString(false)).Aggregate((x, acc) => x + "," + acc)}");
+        }
+
+        [TestMethod]
+        public void OperationReturnsNullWhenNoEncodingExists()
+        {
+            ICollection<byte> allowedBytes = new List<byte>() { 0x0 };
+
+            BaseEncoder addSubEncoder = new AddSubEncoder(allowedBytes);
+            BaseEncoder xorEncoder = new XorEncoder(allowedBytes);
+
+            OpCode source = OpCode.Zero;
+            OpCode target = new OpCode(0x01010101);
+
+            AsmEncoding addEncoding = addSubEncoder.EncodeOperation(source, target, Operation.ADD);
+            AsmEncoding subEncoding = addSubEncoder.EncodeOperation(source, target, Operation.SUB);
+            AsmEncoding xorEncoding = xorEncoder.EncodeOperation(source, target, Operation.XOR);
+
+            Assert.AreEqual(null, addEncoding);
+            Assert.AreEqual(null, subEncoding);
+            Assert.AreEqual(null, xorEncoding);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void XorEncodingFailsWithNonXorOperationCode()
+        {
+            BaseEncoder xorEncoder = new XorEncoder(new List<byte>() { 0x0 });
+
+            xorEncoder.EncodeOperation(OpCode.Zero, OpCode.Zero, Operation.ADD);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void AddSubEncoderThrowsArgumentExceptionWithNoAllowedBytesSpecified()
+        {
+            _ = new AddSubEncoder(Enumerable.Empty<byte>().ToList());
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void XorEncoderThrowsArgumentExceptionWithNoAllowedBytesSpecified()
+        {
+            _ = new XorEncoder(Enumerable.Empty<byte>().ToList());
         }
 
         private void PerformTestLoop(IEnumerable<byte> allowedBytes, int testCases)
@@ -98,35 +141,23 @@ namespace asm.test
                 OpCode source = new OpCode((uint)random.Next());
                 OpCode target = new OpCode((uint)random.Next());
 
-                try
+                AsmEncoding addEncoding = addSubEncoder.EncodeOperation(source, target, Operation.ADD);
+                if (addEncoding != null)
                 {
-                    AsmEncoding addEncoding = addSubEncoder.EncodeOperation(source, target, Operation.ADD);
-                    if (addEncoding != null)
-                    {
-                        Assert.AreEqual(addEncoding.Intermediate.Code, addEncoding.Target.Code, $"{Operation.ADD} :: {source.ToString(false)} --> {target.ToString(false)} == {addEncoding.Transitions.Select(op => op.Delta.ToString(false)).Aggregate((x, acc) => x + "," + acc)}");
-                    }
+                    Assert.AreEqual(addEncoding.Intermediate.Code, addEncoding.Target.Code, $"{Operation.ADD} :: {source.ToString(false)} --> {target.ToString(false)} == {addEncoding.Transitions.Select(op => op.Delta.ToString(false)).Aggregate((x, acc) => x + "," + acc)}");
                 }
-                catch (InvalidOperationException) { }
 
-                try
+                AsmEncoding subEncoding = addSubEncoder.EncodeOperation(source, target, Operation.SUB);
+                if (subEncoding != null)
                 {
-                    AsmEncoding subEncoding = addSubEncoder.EncodeOperation(source, target, Operation.SUB);
-                    if (subEncoding != null)
-                    {
-                        Assert.AreEqual(subEncoding.Intermediate.Code, subEncoding.Target.Code, $"{Operation.SUB} :: {source.ToString(false)} --> {target.ToString(false)} == {subEncoding.Transitions.Select(op => op.Delta.ToString(false)).Aggregate((x, acc) => x + "," + acc)}");
-                    }
+                    Assert.AreEqual(subEncoding.Intermediate.Code, subEncoding.Target.Code, $"{Operation.SUB} :: {source.ToString(false)} --> {target.ToString(false)} == {subEncoding.Transitions.Select(op => op.Delta.ToString(false)).Aggregate((x, acc) => x + "," + acc)}");
                 }
-                catch (InvalidOperationException) { }
 
-                try
+                AsmEncoding xorEncoding = xorEncoder.EncodeOperation(source, target, Operation.XOR);
+                if (xorEncoding != null)
                 {
-                    AsmEncoding xorEncoding = xorEncoder.EncodeOperation(source, target, Operation.XOR);
-                    if (xorEncoding != null)
-                    {
-                        Assert.AreEqual(xorEncoding.Intermediate.Code, xorEncoding.Target.Code, $"{Operation.XOR} :: {source.ToString(false)} --> {target.ToString(false)} == {xorEncoding.Transitions.Select(op => op.Delta.ToString(false)).Aggregate((x, acc) => x + "," + acc)}");
-                    }
+                    Assert.AreEqual(xorEncoding.Intermediate.Code, xorEncoding.Target.Code, $"{Operation.XOR} :: {source.ToString(false)} --> {target.ToString(false)} == {xorEncoding.Transitions.Select(op => op.Delta.ToString(false)).Aggregate((x, acc) => x + "," + acc)}");
                 }
-                catch (InvalidOperationException) { }
             }
         }
     }
