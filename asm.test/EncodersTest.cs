@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using asm.encoder;
 using asm.encoder.Encoders;
 using System.Linq;
+using asm.encoder.Formatter;
 
 namespace asm.test
 {
@@ -12,6 +13,13 @@ namespace asm.test
     public class EncodersTest
     {
         const int tenThousandTestCases = 10000;
+        private IFormatter formatter;
+
+        [TestInitialize]
+        public void InitializeTest()
+        {
+            this.formatter = new DebugFormatter();
+        }
 
         [TestMethod]
         public void IntermediateEncodingEqualsTargetAllAllowedBytesTenThousandRandomChanges()
@@ -65,7 +73,7 @@ namespace asm.test
             OpCode target = new OpCode((uint)0x41058ABE);
 
             AsmEncoding addEncoding = addSubEncoder.EncodeOperation(source, target, Operation.ADD);
-            Assert.AreEqual(addEncoding.Intermediate.Code, addEncoding.Target.Code, $"{Operation.ADD} :: {source.ToString(false)} --> {target.ToString(false)} == {addEncoding.Transitions.Select(op => op.Delta.ToString(false)).Aggregate((x, acc) => x + "," + acc)}");
+            Assert.AreEqual(addEncoding.Intermediate.Code, addEncoding.Target.Code, $"{Operation.ADD} :: {this.formatter.Format(source, Endian.Big)} --> {this.formatter.Format(target, Endian.Big)} == {addEncoding.Transitions.Select(op => this.formatter.Format(op.Delta, Endian.Big)).Aggregate((x, acc) => x + "," + acc)}");
         }
 
         [TestMethod]
@@ -83,7 +91,7 @@ namespace asm.test
             OpCode target = new OpCode(0x7D8BE34F);
 
             AsmEncoding subEncoding = addSubEncoder.EncodeOperation(source, target, Operation.SUB);
-            Assert.AreEqual(subEncoding.Intermediate.Code, subEncoding.Target.Code, $"{Operation.SUB} :: {source.ToString(false)} --> {target.ToString(false)} == {subEncoding.Transitions.Select(op => op.Delta.ToString(false)).Aggregate((x, acc) => x + "," + acc)}");
+            Assert.AreEqual(subEncoding.Intermediate.Code, subEncoding.Target.Code, $"{Operation.SUB} :: {this.formatter.Format(source, Endian.Big)} --> {this.formatter.Format(target, Endian.Big)} == {subEncoding.Transitions.Select(op => this.formatter.Format(op.Delta, Endian.Big)).Aggregate((x, acc) => x + "," + acc)}");
         }
 
         [TestMethod]
@@ -144,19 +152,19 @@ namespace asm.test
                 AsmEncoding addEncoding = addSubEncoder.EncodeOperation(source, target, Operation.ADD);
                 if (addEncoding != null)
                 {
-                    Assert.AreEqual(addEncoding.Intermediate.Code, addEncoding.Target.Code, $"{Operation.ADD} :: {source.ToString(false)} --> {target.ToString(false)} == {addEncoding.Transitions.Select(op => op.Delta.ToString(false)).Aggregate((x, acc) => x + "," + acc)}");
+                    Assert.AreEqual(addEncoding.Intermediate.Code, addEncoding.Target.Code, $"{Operation.ADD} :: {this.formatter.Format(source, Endian.Big)} --> {this.formatter.Format(target, Endian.Big)} == {addEncoding.Transitions.Select(op => this.formatter.Format(op.Delta, Endian.Big)).Aggregate((x, acc) => x + "," + acc)}");
                 }
 
                 AsmEncoding subEncoding = addSubEncoder.EncodeOperation(source, target, Operation.SUB);
                 if (subEncoding != null)
                 {
-                    Assert.AreEqual(subEncoding.Intermediate.Code, subEncoding.Target.Code, $"{Operation.SUB} :: {source.ToString(false)} --> {target.ToString(false)} == {subEncoding.Transitions.Select(op => op.Delta.ToString(false)).Aggregate((x, acc) => x + "," + acc)}");
+                    Assert.AreEqual(subEncoding.Intermediate.Code, subEncoding.Target.Code, $"{Operation.SUB} :: {this.formatter.Format(source, Endian.Big)} --> {this.formatter.Format(target, Endian.Big)} == {subEncoding.Transitions.Select(op => this.formatter.Format(op.Delta, Endian.Big)).Aggregate((x, acc) => x + "," + acc)}");
                 }
 
                 AsmEncoding xorEncoding = xorEncoder.EncodeOperation(source, target, Operation.XOR);
                 if (xorEncoding != null)
                 {
-                    Assert.AreEqual(xorEncoding.Intermediate.Code, xorEncoding.Target.Code, $"{Operation.XOR} :: {source.ToString(false)} --> {target.ToString(false)} == {xorEncoding.Transitions.Select(op => op.Delta.ToString(false)).Aggregate((x, acc) => x + "," + acc)}");
+                    Assert.AreEqual(xorEncoding.Intermediate.Code, xorEncoding.Target.Code, $"{Operation.XOR} :: {this.formatter.Format(source, Endian.Big)} --> {this.formatter.Format(target, Endian.Big)} == {xorEncoding.Transitions.Select(op => this.formatter.Format(op.Delta, Endian.Big)).Aggregate((x, acc) => x + "," + acc)}");
                 }
             }
         }

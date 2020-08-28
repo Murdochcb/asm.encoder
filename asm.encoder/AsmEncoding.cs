@@ -1,4 +1,5 @@
-﻿using System;
+﻿using asm.encoder.Formatter;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -59,22 +60,6 @@ namespace asm.encoder
         {
             Transition transition = this.Transitions.ElementAt(index);
             transition.Delta.ModifyOpCode(bytePosition, value);
-        }
-
-        public override String ToString()
-        {
-            StringBuilder builder = new StringBuilder();
-#if DEBUG
-            builder.AppendLine($"{this.Source.ToString(false)} -> {this.Target.ToString(false)}");
-#endif
-            for (int i = 0; i < this.Transitions.Count; i++)
-            {
-                builder.AppendLine(this.Transitions.ElementAt(i).ToString());
-            }
-
-            builder.AppendLine("PUSH <REG>");
-
-            return builder.ToString();
         }
     }
 }

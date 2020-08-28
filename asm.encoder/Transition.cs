@@ -16,19 +16,6 @@ namespace asm.encoder
             this.Delta = delta;
         }
 
-        public override String ToString()
-        {
-            if (BitConverter.IsLittleEndian)
-            {
-                return $"{this.Operation} <REG>, {this.Delta}";
-            }
-            else
-            {
-                return $"{this.Operation} <REG>, {this.Delta}";
-            }
-            
-        }
-
         public override Int32 GetHashCode()
         {
             unchecked // Overflow is fine, just wrap

@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using asm.encoder.Encoders;
+using asm.encoder.Formatter;
 
 namespace asm.encoder
 {
@@ -23,159 +24,6 @@ namespace asm.encoder
 
     class Program
     {
-        const string AddFlag = "-add";
-        const string SubFlag = "-sub";
-        const string XorFlag = "-xor";
-        const string SourceFlag = "-source";
-        const string TargetFlag = "-target";
-        const string AllowedFlag = "-allowed";
-        const string BadFlag = "-bad";
-
-        static void ValidateArgs(string[] args, out byte[] sourceBytes, out byte[] targetBytes, out byte[] allowedBytes, out bool useAddEncoder, out bool useSubEncoder, out bool useXorEncoder)
-        {
-            string usageMessage = $"Usage: {nameof(asm.encoder)} -source <value> -target <value> [(-allowed | -bad) <value>] [-add | -sub | -xor]";
-            string byteFormatMessage = $"<value> must be binary string format: \\x00\\x01\\x02";
-            string sourceLengthMessage = $"-source <value> must be exactly 4 bytes";
-            string targetLengthMessage = $"-target <value> must be a multiple of 4 bytes";
-
-            if (args.Count() < 7)
-            {
-                throw new ArgumentException(usageMessage);
-            }
-
-            if (!args.Any(a => string.Equals(a, SourceFlag, StringComparison.OrdinalIgnoreCase)))
-            {
-                throw new ArgumentException(usageMessage);
-            }
-
-            if (!args.Any(a => string.Equals(a, TargetFlag, StringComparison.OrdinalIgnoreCase)))
-            {
-                throw new ArgumentException(usageMessage);
-            }
-
-            if (!args.Any(a => string.Equals(a, AllowedFlag, StringComparison.OrdinalIgnoreCase) ||
-                               string.Equals(a, BadFlag, StringComparison.OrdinalIgnoreCase)))
-            {
-                throw new ArgumentException(usageMessage);
-            }
-
-            if (!args.Any(a => string.Equals(a, AddFlag, StringComparison.OrdinalIgnoreCase) ||
-                                string.Equals(a, SubFlag, StringComparison.OrdinalIgnoreCase) ||
-                                string.Equals(a, XorFlag, StringComparison.OrdinalIgnoreCase)))
-            {
-                throw new ArgumentException(usageMessage);
-            }
-
-            useAddEncoder = false;
-            useSubEncoder = false;
-            useXorEncoder = false;
-            sourceBytes = null;
-            targetBytes = null;
-            allowedBytes = null;
-
-            for (int i = 0; i < args.Length - 1; i++)
-            {
-                if (string.Equals(args[i], SourceFlag, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (sourceBytes != null)
-                    {
-                        throw new ArgumentException(usageMessage);
-                    }
-
-                    string sourceData = args[i + 1];
-                    try
-                    {
-                        sourceBytes = sourceData.Split(new string[] { "\\x" }, StringSplitOptions.RemoveEmptyEntries).Select(b => byte.Parse(b, System.Globalization.NumberStyles.HexNumber)).ToArray();
-
-                        if (sourceBytes.Length != 4)
-                        {
-                            throw new ArgumentException(sourceLengthMessage);
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        throw new ArgumentException(byteFormatMessage);
-                    }
-                }
-                else if (string.Equals(args[i], TargetFlag, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (targetBytes != null)
-                    {
-                        throw new ArgumentException(usageMessage);
-                    }
-
-                    string targetData = args[i + 1];
-                    try
-                    {
-                        targetBytes = targetData.Split(new string[] { "\\x" }, StringSplitOptions.RemoveEmptyEntries).Select(b => byte.Parse(b, System.Globalization.NumberStyles.HexNumber)).ToArray();
-                        if (targetBytes.Length % 4 != 0)
-                        {
-                            throw new ArgumentException(targetLengthMessage);
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        throw new ArgumentException(byteFormatMessage);
-                    }
-                }
-                else if (string.Equals(args[i], AllowedFlag, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (allowedBytes != null)
-                    {
-                        throw new ArgumentException(usageMessage);
-                    }
-
-                    string allowedData = args[i + 1];
-                    try
-                    {
-                       allowedBytes = allowedData.Split(new string[] { "\\x" }, StringSplitOptions.RemoveEmptyEntries).Select(b => byte.Parse(b, System.Globalization.NumberStyles.HexNumber)).ToArray();
-                    }
-                    catch (Exception)
-                    {
-                        throw new ArgumentException(byteFormatMessage);
-                    }
-                }
-                else if (string.Equals(args[i], BadFlag, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (allowedBytes != null)
-                    {
-                        throw new ArgumentException(usageMessage);
-                    }
-
-                    string disallowedData = args[i + 1];
-                    try
-                    {
-                        byte[] disallowedBytes = disallowedData.Split(new string[] { "\\x" }, StringSplitOptions.RemoveEmptyEntries).Select(b => byte.Parse(b, System.Globalization.NumberStyles.HexNumber)).ToArray();
-                        allowedBytes = new byte[(byte.MaxValue + 1 - disallowedBytes.Length)];
-                        int index = 0;
-                        for (int byteValue = 0; byteValue < byte.MaxValue + 1; byteValue++)
-                        {
-                            if (!disallowedBytes.Any(bad => bad == (byte)byteValue))
-                            {
-                                allowedBytes[index++] = (byte)byteValue;
-                            }
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        throw new ArgumentException(byteFormatMessage);
-                    }
-                }
-                else if (string.Equals(args[i], AddFlag, StringComparison.OrdinalIgnoreCase))
-                {
-                    useAddEncoder = true;
-                }
-                else if (string.Equals(args[i], SubFlag, StringComparison.OrdinalIgnoreCase))
-                {
-                    useSubEncoder = true;
-                }
-                else if (string.Equals(args[i], XorFlag, StringComparison.OrdinalIgnoreCase))
-                {
-                    useXorEncoder = true;
-                }
-            }
-        }
-
         static void SetupOption1()
         {
             Console.WriteLine($"{string.Empty.PadRight(20, '=')}{nameof(SetupOption1)}{string.Empty.PadRight(20, '=')}");
@@ -224,7 +72,7 @@ namespace asm.encoder
                 Console.WriteLine($"Endian Format: {(BitConverter.IsLittleEndian ? "LITTLE ENDIAN" : "BIG ENDIAN")}");
                 Console.WriteLine($"When using this tool to find encoded ADD/SUB amount to increment register, input 'target' as LITTLE ENDIAN format.");
 
-                ValidateArgs(args, out byte[] sourceBytes, out byte[] targetBytes, out byte[] allowedBytes, out bool useAddEncoder, out bool useSubEncoder, out bool useXorEncoder);
+                Validator.ValidateArgs(args, out byte[] sourceBytes, out byte[] targetBytes, out byte[] allowedBytes, out bool useAddEncoder, out bool useSubEncoder, out bool useXorEncoder, out IFormatter formatter, out Endian endian);
 
                 SetupOption1();
                 SetupOption2();
@@ -275,7 +123,7 @@ namespace asm.encoder
                         result = xorEncoding;
                     }
 
-                    Console.WriteLine(result);
+                    Console.WriteLine(formatter.Format(result, endian));
                     encodedSize += (result.Transitions.Count * 5) + 1; // 5 bytes per encoding step; 1 byte for push
                     source = target;
                 }

@@ -23,23 +23,6 @@ namespace asm.encoder
             this.Ops[bytePosition] = value;
         }
 
-        public override String ToString()
-        {
-            return this.ToString(true);
-        }
-
-        public String ToString(bool printLittleEndian)
-        {
-            if ((printLittleEndian && !BitConverter.IsLittleEndian) || (!printLittleEndian && BitConverter.IsLittleEndian))
-            {
-                return $"0x{this.Ops.Reverse().Select(b => $"{b:X2}").Aggregate((x, acc) => x + acc)}";
-            }
-            else
-            {
-                return $"0x{this.Ops.Select(b => $"{b:X2}").Aggregate((x, acc) => x + acc)}";
-            }
-        }
-
         public static bool operator >(OpCode left, OpCode right)
         {
             return left.Code > right.Code;

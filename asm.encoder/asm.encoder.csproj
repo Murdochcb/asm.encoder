@@ -47,11 +47,18 @@
     <Compile Include="Encoders\AddSubEncoder.cs" />
     <Compile Include="Encoders\BaseEncoder.cs" />
     <Compile Include="Encoders\XorEncoder.cs" />
+    <Compile Include="Endian.cs" />
+    <Compile Include="Formatter\BaseFormatter.cs" />
+    <Compile Include="Formatter\BinaryAsmFormatter.cs" />
+    <Compile Include="Formatter\DebugFormatter.cs" />
+    <Compile Include="Formatter\IFormatter.cs" />
+    <Compile Include="Formatter\PythonFormatter.cs" />
     <Compile Include="OpCode.cs" />
     <Compile Include="Operation.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Transition.cs" />
+    <Compile Include="Validator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitattributes" />

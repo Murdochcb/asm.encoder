@@ -9,7 +9,7 @@ namespace asm.encoder.Encoders
 {
     internal sealed class AddSubEncoder : BaseEncoder
     {
-        public AddSubEncoder(IEnumerable<Byte> allowedBytes) : base(allowedBytes) { }
+        public AddSubEncoder(IEnumerable<byte> allowedBytes) : base(allowedBytes) { }
 
         public override AsmEncoding EncodeOperation(OpCode source, OpCode target, Operation operation)
         {
@@ -91,12 +91,12 @@ namespace asm.encoder.Encoders
             return this.ConvertMapTransitions(operation, transitions);
         }
 
-        protected override Dictionary<int, Dictionary<Byte, IEnumerable<Byte>>> BuildTransitionMap()
+        protected override Dictionary<int, Dictionary<byte, IEnumerable<byte>>> BuildTransitionMap()
         {
-            var result = new Dictionary<int, Dictionary<Byte, IEnumerable<Byte>>>();
+            var result = new Dictionary<int, Dictionary<byte, IEnumerable<byte>>>();
 
             int transitionCount = 1;
-            result[transitionCount] = new Dictionary<Byte, IEnumerable<Byte>>();
+            result[transitionCount] = new Dictionary<byte, IEnumerable<byte>>();
             foreach (byte allowed in this.allowedBytes)
             {
                 result[transitionCount][allowed] = new List<byte>() { allowed };
@@ -122,7 +122,7 @@ namespace asm.encoder.Encoders
 
                             if (!tempMap.ContainsKey(sum))
                             {
-                                tempMap[sum] = new List<Byte>() { allowed }.Concat(pair.Value).ToList();
+                                tempMap[sum] = new List<byte>() { allowed }.Concat(pair.Value).ToList();
                             }
                         }
                     }

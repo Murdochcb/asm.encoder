@@ -9,8 +9,8 @@ namespace asm.encoder.Encoders
     internal abstract class BaseEncoder
     {
         protected const int transitionCountLimit = 10;
-        protected readonly IEnumerable<Byte> allowedBytes;
-        protected readonly Dictionary<int, Dictionary<Byte, IEnumerable<Byte>>> map;
+        protected readonly IEnumerable<byte> allowedBytes;
+        protected readonly Dictionary<int, Dictionary<byte, IEnumerable<byte>>> map;
 
         public BaseEncoder(IEnumerable<byte> allowedBytes)
         {
@@ -73,6 +73,6 @@ namespace asm.encoder.Encoders
 
         protected abstract IEnumerable<Transition> BuildTransitions(Operation operation, OpCode delta);
         public abstract AsmEncoding EncodeOperation(OpCode source, OpCode target, Operation operation);
-        protected abstract Dictionary<int, Dictionary<Byte, IEnumerable<Byte>>> BuildTransitionMap();
+        protected abstract Dictionary<int, Dictionary<byte, IEnumerable<byte>>> BuildTransitionMap();
     }
 }
