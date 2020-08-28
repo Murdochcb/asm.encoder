@@ -45,7 +45,7 @@ namespace asm.encoder.Encoders
 
         protected override IEnumerable<Transition> BuildTransitions(Operation operation, OpCode delta)
         {
-            if (OpCode.Zero.Equals(delta.Code))
+            if (OpCode.Zero.Equals(delta))
             {
                 return Enumerable.Empty<Transition>();
             }
