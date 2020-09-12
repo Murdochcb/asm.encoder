@@ -1,4 +1,5 @@
-﻿using System;
+﻿using asm.encoder.Registers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,11 +10,13 @@ namespace asm.encoder
     internal sealed class Transition
     {
         public Operation Operation { get; }
+        public IRegister Register { get; }
         public OpCode Delta { get; private set; }
-        public Transition(Operation operation, OpCode delta)
+        public Transition(Operation operation, IRegister register, OpCode delta)
         {
             this.Operation = operation;
-            this.Delta = delta;
+            this.Register = register ?? throw new ArgumentNullException(nameof(register));
+            this.Delta = delta ?? throw new ArgumentNullException(nameof(delta));
         }
 
         public override Int32 GetHashCode()
@@ -23,6 +26,7 @@ namespace asm.encoder
                 int hash = 17;
                 hash = hash * 23 + this.Operation.GetHashCode();
                 hash = hash * 23 + this.Delta.GetHashCode();
+                hash = hash * 23 + this.Register.GetHashCode();
                 return hash;
             }
         }
@@ -35,10 +39,11 @@ namespace asm.encoder
             }
 
             return this.Operation == other.Operation &&
-                Equals(this.Delta, other.Delta);
+                Equals(this.Delta, other.Delta) &&
+                Equals(this.Register, other.Register);
         }
 
-        public override Boolean Equals(Object obj)
+        public override bool Equals(object obj)
         {
             if (obj is null)
             {

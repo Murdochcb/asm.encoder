@@ -1,4 +1,5 @@
-﻿using System;
+﻿using asm.encoder.Registers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,5 +15,6 @@ namespace asm.encoder.Formatter
         string Format(Transition transition, Endian endian);
         string Format(AsmEncoding encoding);
         string Format(AsmEncoding encoding, Endian endian);
+        string Format(RegisterCode registerCode);
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using asm.encoder.Registers;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -9,14 +10,24 @@ namespace asm.encoder.Encoders
 {
     internal sealed class AddSubEncoder : BaseEncoder
     {
-        public AddSubEncoder(IEnumerable<byte> allowedBytes) : base(allowedBytes) { }
+        public AddSubEncoder(Operation operation, IRegister register, IEnumerable<byte> allowedBytes) : base(operation, register, allowedBytes) { }
 
-        public override AsmEncoding EncodeOperation(OpCode source, OpCode target, Operation operation)
+        public override AsmEncoding EncodeOperation(OpCode source, OpCode target)
         {
-            AsmEncoding encoding = new AsmEncoding(source, target);
+            if (!(Equals(this.operation, Operation.ADD) || Equals(this.operation, Operation.SUB)))
+            {
+                throw new ArgumentException($"{operation} is not a supported option. {nameof(AddSubEncoder)} can only perform {Operation.ADD} or {Operation.SUB} operations.");
+            }
+
+            if (this.register == null)
+            {
+                return null;
+            }
+
+            AsmEncoding encoding = new AsmEncoding(this.register, source, target);
 
             OpCode delta;
-            switch (operation)
+            switch (this.operation)
             {
                 case Operation.ADD:
                     delta = encoding.Target - encoding.Intermediate;
@@ -25,7 +36,7 @@ namespace asm.encoder.Encoders
                     delta = encoding.Intermediate - encoding.Target;
                     break;
                 default:
-                    throw new ArgumentException($"Unsupported operation: {operation}");
+                    throw new ArgumentException($"Unsupported operation: {this.operation}");
             }
 
             if (!this.TransitionExists(delta))
@@ -33,7 +44,7 @@ namespace asm.encoder.Encoders
                 return null;
             }
 
-            IEnumerable<Transition> transitions = this.BuildTransitions(operation, delta);
+            IEnumerable<Transition> transitions = this.BuildTransitions(delta);
 
             foreach (var transition in transitions)
             {
@@ -43,7 +54,7 @@ namespace asm.encoder.Encoders
             return encoding;
         }
 
-        protected override IEnumerable<Transition> BuildTransitions(Operation operation, OpCode delta)
+        protected override IEnumerable<Transition> BuildTransitions(OpCode delta)
         {
             if (OpCode.Zero.Equals(delta))
             {
@@ -88,7 +99,7 @@ namespace asm.encoder.Encoders
                 }
             }
 
-            return this.ConvertMapTransitions(operation, transitions);
+            return this.ConvertMapTransitions(transitions);
         }
 
         protected override Dictionary<int, Dictionary<byte, IEnumerable<byte>>> BuildTransitionMap()

@@ -1,4 +1,5 @@
 ﻿using asm.encoder.Formatter;
+using asm.encoder.Registers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +21,7 @@ namespace asm.encoder
         const string EndianFlag = "-endian";
         static readonly string[] formats = new string[] { BinaryAsmFormatter.FormatName, PythonFormatter.FormatName, DebugFormatter.FormatName };
 
-        public static void ValidateArgs(string[] args, out byte[] sourceBytes, out byte[] targetBytes, out byte[] allowedBytes, out bool useAddEncoder, out bool useSubEncoder, out bool useXorEncoder, out IFormatter formatter, out Endian endian)
+        public static void ValidateArgs(string[] args, out byte[] sourceBytes, out byte[] targetBytes, out byte[] allowedBytes, out Operation operationFlags, out IFormatter formatter, out Endian endian, out IEnumerable<IRegister> encodingRegisters)
         {
             string usageMessage = $"Usage: {nameof(asm.encoder)} -source <value> -target <value> [(-allowed | -bad) <value>] [-add | -sub | -xor] {{-format <value>}} {{-endian <value>}}";
             string byteFormatMessage = $"<value> must be binary string format: \\x00\\x01\\x02";
@@ -28,6 +29,7 @@ namespace asm.encoder
             string endianFormatMessage = $"<value> must be any of the following (case-insensitive): [{Endian.Little} | {Endian.Big}]";
             string sourceLengthMessage = $"-source <value> must be exactly 4 bytes";
             string targetLengthMessage = $"-target <value> must be a multiple of 4 bytes";
+            string encodingErrorMessage = $"There exist no registers with the current byte restrictions to support the current combination of [-add | -sub | -xor]";
 
             if (args.Count() < 7)
             {
@@ -57,9 +59,7 @@ namespace asm.encoder
                 throw new ArgumentException(usageMessage);
             }
 
-            useAddEncoder = false;
-            useSubEncoder = false;
-            useXorEncoder = false;
+            operationFlags = Operation.NONE;
             sourceBytes = null;
             targetBytes = null;
             allowedBytes = null;
@@ -156,15 +156,15 @@ namespace asm.encoder
                 }
                 else if (string.Equals(args[i], AddFlag, StringComparison.OrdinalIgnoreCase))
                 {
-                    useAddEncoder = true;
+                    operationFlags |= Operation.ADD;
                 }
                 else if (string.Equals(args[i], SubFlag, StringComparison.OrdinalIgnoreCase))
                 {
-                    useSubEncoder = true;
+                    operationFlags |= Operation.SUB;
                 }
                 else if (string.Equals(args[i], XorFlag, StringComparison.OrdinalIgnoreCase))
                 {
-                    useXorEncoder = true;
+                    operationFlags |= Operation.XOR;
                 }
                 else if (string.Equals(args[i], FormatFlag, StringComparison.OrdinalIgnoreCase))
                 {
@@ -204,6 +204,13 @@ namespace asm.encoder
                         throw new ArgumentException(endianFormatMessage);
                     }
                 }
+            }
+
+            encodingRegisters = RegisterFactory.GetEncodingRegisters(operationFlags, allowedBytes);
+
+            if (!encodingRegisters.Any())
+            {
+                throw new ArgumentException(encodingErrorMessage);
             }
         }
     }

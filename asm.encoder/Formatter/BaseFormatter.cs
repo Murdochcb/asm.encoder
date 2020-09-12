@@ -1,4 +1,5 @@
-﻿using System;
+﻿using asm.encoder.Registers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,7 +26,7 @@ namespace asm.encoder.Formatter
                 builder.AppendLine(this.Format(encoding.Transitions.ElementAt(i), endian));
             }
 
-            builder.AppendLine("PUSH <REG>");
+            builder.AppendLine($"{this.Format(encoding.Register.GetRegisterCode(Instruction.PushReg))}");
 
             return builder.ToString();
         }
@@ -42,9 +43,8 @@ namespace asm.encoder.Formatter
             return this.Format(transition, defaultEndian);
         }
 
-        public virtual string Format(Transition transition, Endian endian)
-        {
-            return $"{transition.Operation} <REG>, {this.Format(transition.Delta, endian)}";
-        }
+        public abstract string Format(Transition transition, Endian endian);
+
+        public abstract string Format(RegisterCode registerCode);
     }
 }
