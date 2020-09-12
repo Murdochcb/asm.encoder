@@ -1,4 +1,5 @@
-﻿using System;
+﻿using asm.encoder.Registers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -31,6 +32,28 @@ namespace asm.encoder.Formatter
             }
 
             return $"0x{ops.Select(b => $"{b:X2}").Aggregate((x, acc) => x + acc)}";
+        }
+
+        public override string Format(Transition transition, Endian endian)
+        {
+            string opCodeFormat = this.Format(transition.Delta, endian);
+
+            switch (transition.Operation)
+            {
+                case Operation.ADD:
+                    return $"{this.Format(transition.Register.GetRegisterCode(Instruction.AddRegCon))} {opCodeFormat}";
+                case Operation.SUB:
+                    return $"{this.Format(transition.Register.GetRegisterCode(Instruction.SubRegCon))} {opCodeFormat}";
+                case Operation.XOR:
+                    return $"{this.Format(transition.Register.GetRegisterCode(Instruction.XorRegCon))} {opCodeFormat}";
+                default:
+                    throw new ArgumentException($"The operation {transition.Operation} is not supported.");
+            }
+        }
+
+        public override string Format(RegisterCode registerCode)
+        {
+            return $"{registerCode.Ops.Select(b => $"{b:X2}").Aggregate((x, acc) => x + acc)}";
         }
     }
 }

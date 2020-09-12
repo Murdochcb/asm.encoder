@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace asm.encoder
 {
+    [Flags]
     internal enum Operation
     {
-        ADD = 0,
-        SUB = 1,
-        XOR = 2,
-        OR = 3,
-        AND = 4
+        NONE = 0x0,
+        ADD = 0x1,
+        SUB = 0x2,
+        XOR = 0x4
     }
 }

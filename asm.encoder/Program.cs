@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using asm.encoder.Encoders;
 using asm.encoder.Formatter;
+using asm.encoder.Registers;
 
 namespace asm.encoder
 {
@@ -72,22 +73,29 @@ namespace asm.encoder
                 Console.WriteLine($"Endian Format: {(BitConverter.IsLittleEndian ? "LITTLE ENDIAN" : "BIG ENDIAN")}");
                 Console.WriteLine($"When using this tool to find encoded ADD/SUB amount to increment register, input 'target' as LITTLE ENDIAN format.");
 
-                Validator.ValidateArgs(args, out byte[] sourceBytes, out byte[] targetBytes, out byte[] allowedBytes, out bool useAddEncoder, out bool useSubEncoder, out bool useXorEncoder, out IFormatter formatter, out Endian endian);
+                Validator.ValidateArgs(args, out byte[] sourceBytes, out byte[] targetBytes, out byte[] allowedBytes, out Operation operationFlags, out IFormatter formatter, out Endian endian, out IEnumerable<IRegister> encodingRegisters);
 
                 SetupOption1();
                 SetupOption2();
                 SetupOption3();
 
-                BaseEncoder addSubEncoder = null;
+                BaseEncoder addEncoder = null;
+                BaseEncoder subEncoder = null;
                 BaseEncoder xorEncoder = null;
 
-                if (useAddEncoder || useSubEncoder)
+                IRegister encodingRegister = encodingRegisters.First();
+
+                if (operationFlags.HasFlag(Operation.ADD))
                 {
-                    addSubEncoder = new AddSubEncoder(allowedBytes);
+                    addEncoder = new AddSubEncoder(Operation.ADD, encodingRegister, allowedBytes);
                 }
-                if (useXorEncoder)
+                if (operationFlags.HasFlag(Operation.SUB))
                 {
-                    xorEncoder = new XorEncoder(allowedBytes);
+                    subEncoder = new AddSubEncoder(Operation.SUB, encodingRegister, allowedBytes);
+                }
+                if (operationFlags.HasFlag(Operation.XOR))
+                {
+                    xorEncoder = new XorEncoder(encodingRegister, allowedBytes);
                 }
 
                 int encodedSize = 0;
@@ -100,18 +108,9 @@ namespace asm.encoder
 
                     OpCode target = new OpCode(BitConverter.ToUInt32(targetBytes, i));
 
-                    if (useAddEncoder)
-                    {
-                        addEncoding = addSubEncoder.EncodeOperation(source, target, Operation.ADD);
-                    }
-                    if (useSubEncoder)
-                    {
-                        subEncoding = addSubEncoder.EncodeOperation(source, target, Operation.SUB);
-                    }
-                    if (useXorEncoder)
-                    {
-                        xorEncoding = xorEncoder.EncodeOperation(source, target, Operation.XOR);
-                    }
+                    addEncoding = addEncoder?.EncodeOperation(source, target);
+                    subEncoding = subEncoder?.EncodeOperation(source, target);
+                    xorEncoding = xorEncoder?.EncodeOperation(source, target);
 
                     AsmEncoding result = addEncoding;
                     if (subEncoding != null && (result == null || subEncoding.Transitions.Count < result.Transitions.Count))

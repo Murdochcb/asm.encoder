@@ -1,4 +1,5 @@
 ﻿using asm.encoder.Formatter;
+using asm.encoder.Registers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,7 @@ namespace asm.encoder
 {
     internal sealed class AsmEncoding
     {
+        public IRegister Register { get; }
         public OpCode Source { get; }
         public OpCode Target { get; }
         public ICollection<Transition> Transitions { get; }
@@ -37,8 +39,9 @@ namespace asm.encoder
             }
         }
 
-        public AsmEncoding(OpCode source, OpCode target)
+        public AsmEncoding(IRegister register, OpCode source, OpCode target)
         {
+            this.Register = register ?? throw new ArgumentNullException(nameof(register));
             this.Source = source ?? throw new ArgumentNullException(nameof(source));
             this.Target = target ?? throw new ArgumentNullException(nameof(target));
             this.Transitions = new List<Transition>();
@@ -46,11 +49,11 @@ namespace asm.encoder
 
         public AsmEncoding DeepCopy()
         {
-            AsmEncoding copy = new AsmEncoding(this.Source, this.Target);
+            AsmEncoding copy = new AsmEncoding(this.Register, this.Source, this.Target);
             for (int i = 0; i < this.Transitions.Count; i++)
             {
                 Transition transition = this.Transitions.ElementAt(i);
-                copy.Transitions.Add(new Transition(transition.Operation, transition.Delta));
+                copy.Transitions.Add(new Transition(transition.Operation, this.Register, transition.Delta));
             }
 
             return copy;

@@ -63,7 +63,7 @@ namespace asm.encoder
             return this.Code == other.Code;
         }
 
-        public override Boolean Equals(Object obj)
+        public override bool Equals(object obj)
         {
             if (obj is null)
             {

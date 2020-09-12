@@ -1,0 +1,98 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace asm.encoder.Registers
+{
+    internal enum Instruction
+    {
+        AddRegCon,
+        AddRegMem,
+        AddMemCon,
+        AddRegEax,
+        AddRegEbx,
+        AddRegEcx,
+        AddRegEdx,
+        AddRegEbp,
+        AddRegEsp,
+        AddRegEsi,
+        AddRegEdi,
+        AddMemEax,
+        AddMemEbx,
+        AddMemEcx,
+        AddMemEdx,
+        AddMemEbp,
+        AddMemEsp,
+        AddMemEsi,
+        AddMemEdi,
+
+        SubRegCon,
+        SubRegMem,
+        SubMemCon,
+        SubRegEax,
+        SubRegEbx,
+        SubRegEcx,
+        SubRegEdx,
+        SubRegEbp,
+        SubRegEsp,
+        SubRegEsi,
+        SubRegEdi,
+        SubMemEax,
+        SubMemEbx,
+        SubMemEcx,
+        SubMemEdx,
+        SubMemEbp,
+        SubMemEsp,
+        SubMemEsi,
+        SubMemEdi,
+
+        XorRegCon,
+        XorRegMem,
+        XorMemCon,
+        XorRegEax,
+        XorRegEbx,
+        XorRegEcx,
+        XorRegEdx,
+        XorRegEbp,
+        XorRegEsp,
+        XorRegEsi,
+        XorRegEdi,
+        XorMemEax,
+        XorMemEbx,
+        XorMemEcx,
+        XorMemEdx,
+        XorMemEbp,
+        XorMemEsp,
+        XorMemEsi,
+        XorMemEdi,
+
+        PushReg,
+        PushMem,
+        PushCon,
+
+        PopReg,
+        PopMem,
+
+        MovRegCon,
+        MovRegMem,
+        MovMemCon,
+        MovRegEax,
+        MovRegEbx,
+        MovRegEcx,
+        MovRegEdx,
+        MovRegEbp,
+        MovRegEsp,
+        MovRegEsi,
+        MovRegEdi,
+        MovMemEax,
+        MovMemEbx,
+        MovMemEcx,
+        MovMemEdx,
+        MovMemEbp,
+        MovMemEsp,
+        MovMemEsi,
+        MovMemEdi
+    }
+}

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using asm.encoder.Registers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,21 +9,16 @@ namespace asm.encoder.Encoders
 {
     internal sealed class XorEncoder : BaseEncoder
     {
-        private readonly Operation xorOperation;
+        public XorEncoder(IRegister register, IEnumerable<byte> allowedBytes) : base(Operation.XOR, register, allowedBytes) { }
 
-        public XorEncoder(IEnumerable<byte> allowedBytes) : base (allowedBytes)
+        public override AsmEncoding EncodeOperation(OpCode source, OpCode target)
         {
-            this.xorOperation = Operation.XOR;
-        }
-
-        public override AsmEncoding EncodeOperation(OpCode source, OpCode target, Operation operation)
-        {
-            if (operation != this.xorOperation)
+            if (this.register == null)
             {
-                throw new ArgumentException($"{operation} is not a supported option. {nameof(XorEncoder)} can only perform {this.xorOperation} operations.");
+                return null;
             }
 
-            AsmEncoding encoding = new AsmEncoding(source, target);
+            AsmEncoding encoding = new AsmEncoding(this.register, source, target);
 
             OpCode delta = encoding.Target ^ encoding.Intermediate;
 
@@ -31,7 +27,7 @@ namespace asm.encoder.Encoders
                 return null;
             }
 
-            IEnumerable<Transition> transitions = this.BuildTransitions(operation, delta);
+            IEnumerable<Transition> transitions = this.BuildTransitions(delta);
 
             foreach (var transition in transitions)
             {
@@ -41,7 +37,7 @@ namespace asm.encoder.Encoders
             return encoding;
         }
 
-        protected override IEnumerable<Transition> BuildTransitions(Operation operation, OpCode delta)
+        protected override IEnumerable<Transition> BuildTransitions(OpCode delta)
         {
             if (OpCode.Zero.Equals(delta))
             {
@@ -63,7 +59,7 @@ namespace asm.encoder.Encoders
                 }
             }
 
-            return this.ConvertMapTransitions(operation, transitions);
+            return this.ConvertMapTransitions(transitions);
         }
 
         protected override Dictionary<int, Dictionary<byte, IEnumerable<byte>>> BuildTransitionMap()
